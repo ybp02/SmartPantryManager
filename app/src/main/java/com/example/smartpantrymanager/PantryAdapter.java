@@ -1,5 +1,7 @@
 package com.example.smartpantrymanager;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +14,11 @@ import java.util.List;
 public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.ViewHolder> {
 
     private List<PantryItem> pantryList;
+    private Context context;
 
-    public PantryAdapter(List<PantryItem> pantryList) {
+    public PantryAdapter(List<PantryItem> pantryList, Context context) {
         this.pantryList = pantryList;
+        this.context = context;
     }
 
     @NonNull
@@ -30,11 +34,30 @@ public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.ViewHolder
         holder.tvName.setText(item.getName());
         holder.tvDetails.setText(item.getDetails());
 
-        // Temporary delete button action
         holder.btnDelete.setOnClickListener(v -> {
-            pantryList.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, pantryList.size());
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && pos < pantryList.size()) {
+                PantryItem currentItem = pantryList.get(pos);
+                DatabaseHelper db = new DatabaseHelper(context);
+                db.deletePantryItem(currentItem.getName());
+
+                pantryList.remove(pos);
+                notifyItemRemoved(pos);
+                notifyItemRangeChanged(pos, pantryList.size());
+            }
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && pos < pantryList.size()) {
+                PantryItem currentItem = pantryList.get(pos);
+                Intent intent = new Intent(context, AddEditActivity.class);
+                intent.putExtra("IS_EDIT", true);
+                intent.putExtra("OLD_NAME", currentItem.getName());
+                intent.putExtra("CURRENT_NAME", currentItem.getName());
+                intent.putExtra("CURRENT_QTY", currentItem.getDetails());
+                context.startActivity(intent);
+            }
         });
     }
 
